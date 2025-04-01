@@ -18,8 +18,10 @@ local function parseInputs(...)
 end
 
 local protoDir, outputDir = parseInputs(...)
-local tagsFile = "tags.lua"
-local outputFile = "typedef.lua"
+local inTagsFile = "tags.lua"
+
+local outAttrFile = "attrdef.lua"
+local outTagsFile = "tagdef.lua"
 
 local function joinPath(...)
 	return table.concat({...}, delimiter)
@@ -47,7 +49,7 @@ local FieldInfoKeyList = {
 }
 
 
-local TagsDef = Utils.LoadFile(joinPath(protoDir, tagsFile))
+local TagsDef = Utils.LoadFile(joinPath(protoDir, inTagsFile))
 
 local function generateConfig(configData)
 	local structPool = {}
@@ -108,7 +110,56 @@ local function generateConfig(configData)
 	return dumpTable
 end
 
-local function prettySeriTable(T)
+local function prettyTagsdef(T)
+	local out = {}
+	local flag = 0
+	for typeName, defs in Utils.StablePairs(T) do
+		out[typeName] = defs
+		for _, val in Utils.StablePairs(defs) do
+			flag = flag | val
+		end
+	end
+	assert(out["FullTagsFlag"] == nil)
+	out["FullTagsFlag"] = flag
+
+	local function seriTbl(tbl, prevIndex, index)
+		local prevSpace = string.rep('	', prevIndex)
+		local space = string.rep('	', index)
+		local function _keyToStr(value)
+			local t = type(value)
+			assert(t == 'string')
+			return value
+		end
+		local function _valToStr(value)
+			local t = type(value)
+			if t == 'number' then
+				return string.format("0x%x", value)
+			end
+		end
+
+		local tmp = {'{\n'}
+		for k, v in Utils.StablePairs(tbl) do
+			local key = _keyToStr(k)
+			table.insert(tmp, space)
+			table.insert(tmp, key)
+			table.insert(tmp, ' = ')
+			local value = _valToStr(v)
+			if value then
+				table.insert(tmp, value)
+			else
+				assert(type(v) == 'table', v)
+				table.insert(tmp, seriTbl(v, index, index + 1))
+			end
+			table.insert(tmp, ',\n')
+		end
+		table.insert(tmp, prevSpace)
+		table.insert(tmp, '}')
+		return table.concat(tmp)
+	end
+	return seriTbl(out, 0, 1)
+end
+
+local function prettyAttrTable(T)
 	local repeatTbl = {}
 	local function seriTbl(tbl, prevIndex, index)
 		local function _kvToStr(value)
@@ -169,15 +220,18 @@ local function prettySeriTable(T)
 	return seriTbl(T, 0, 1)
 end
 
-
-local env = Utils.LoadFile(joinPath(protoDir, tagsFile))
-local typeDefs = listDir(protoDir, "lua")
-for _, filename in ipairs(typeDefs) do
-	if filename ~= tagsFile then
-		env = Utils.LoadFile(joinPath(protoDir, filename), env)
-	end
+local function outputFile(dir, file, data)
+	Utils.WriteFile(joinPath(dir, file), "return " .. data)
 end
 
+outputFile(outputDir, outTagsFile, prettyTagsdef(TagsDef))
+
+local env = Utils.LoadFile(joinPath(protoDir, inTagsFile))
+local typeDefs = listDir(protoDir, "lua")
+for _, filename in ipairs(typeDefs) do
+	if filename ~= inTagsFile then
+		Utils.LoadFile(joinPath(protoDir, filename), env)
+	end
+end
 local dumpTbl = generateConfig(env)
-local data = "return " .. prettySeriTable(dumpTbl)
-Utils.WriteFile(joinPath(outputDir, outputFile), data)
+outputFile(outputDir, outAttrFile, prettyAttrTable(dumpTbl))

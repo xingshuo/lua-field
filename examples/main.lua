@@ -2,10 +2,10 @@ local Typedef = require("pkg.Typedef")
 local Factory = require("pkg.Factory")
 local Utils = require("pkg.Utils")
 
-local Propdef = require("examples.res.typedef")
-Typedef.SetTypedef(Propdef)
+local Attrdef = require("examples.res.attrdef")
+Typedef.SetTypedef(Attrdef)
 
-local TagsDef = Utils.LoadFile("examples/proto/tags.lua")
+local TagsDef = require("examples.res.tagdef")
 Typedef.SetTagdef(TagsDef)
 
 local function test1()
