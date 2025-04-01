@@ -474,8 +474,7 @@ end
 
 --[[
 	功能: 获取原始数据修改信息
-	返回值: if toMongo is true, return mongo update sql
-		    else return modify loglist
+	返回值: modify logList. if logList is empty, return nil. else if toMongo is true, return mongodb update sql. else return logList
 	modify loglist格式:
 	{
 		{pathList1, value1},
@@ -492,6 +491,9 @@ end
 function Api.FetchModifyLog(obj, nTagsFlag, isClearDirtyTags, toMongo)
 	local logList = {}
 	_fetchModifyLog(obj, nTagsFlag, isClearDirtyTags, logList)
+	if #logList == 0 then
+		return
+	end
 	if toMongo then
 		local mSet = {}
 		local mUnset = {}
@@ -505,10 +507,13 @@ function Api.FetchModifyLog(obj, nTagsFlag, isClearDirtyTags, toMongo)
 				mUnset[key] = true
 			end
 		end
-		local updates = {
-			["$set"] = mSet,
-			["$unset"] = mUnset,
-		}
+		local updates = {}
+		if next(mSet) ~= nil then
+			updates["$set"] = mSet
+		end
+		if next(mUnset) ~= nil then
+			updates["$unset"] = mUnset
+		end
 		return updates
 	end
 	return logList

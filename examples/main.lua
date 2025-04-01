@@ -26,30 +26,22 @@ local function test1()
 			offline_time = -1,
 			lv = 40,
 		},
-		["$unset"] = {},
 	}
 	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
 	updateLogs = Factory.FetchModifyLog(attrObj, TagsDef.Persistent.FIX, true, true)
-	expect = {
-		["$set"] = {},
-		["$unset"] = {},
-	}
-	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
+	expect = nil
+	assert(updateLogs == expect)
 
 	updateLogs = Factory.FetchModifyLog(attrObj, TagsDef.Sync.OWN, true, true)
 	expect = {
 		["$set"] = {
 			lv = 40,
 		},
-		["$unset"] = {},
 	}
 	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
 	updateLogs = Factory.FetchModifyLog(attrObj, TagsDef.Sync.OWN, true, true)
-	expect = {
-		["$set"] = {},
-		["$unset"] = {},
-	}
-	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
+	expect = nil
+	assert(updateLogs == expect)
 end
 
 local function test2()
@@ -78,7 +70,6 @@ local function test2()
 		["$set"] = {
 			task_bag = taskBag,
 		},
-		["$unset"] = {},
 	}
 	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
 
@@ -96,7 +87,6 @@ local function test2()
 		["$set"] = {
 			base_attr = attrData,
 		},
-		["$unset"] = {},
 	}
 	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
 	-- Factory.ClearDirtyTags(playerObj)
@@ -123,7 +113,6 @@ local function test2()
 			["activity_award.10001"] = actAwardData[10001],
 			["activity_award.20001"] = actAwardData[20001],
 		},
-		["$unset"] = {},
 	}
 	assert(Utils.TableIsSame(updateLogs, expect), Utils.TableTostr(updateLogs))
 

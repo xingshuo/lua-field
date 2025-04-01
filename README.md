@@ -107,7 +107,6 @@ local expect = {
 		offline_time = -1,
 		lv = 40,
 	},
-	["$unset"] = {},
 }
 
 assert(Utils.TableIsSame(updateLogs, expect))
@@ -117,7 +116,6 @@ local expect = {
 	["$set"] = {
 		lv = 40,
 	},
-	["$unset"] = {},
 }
 assert(Utils.TableIsSame(updateLogs, expect))
 
@@ -133,11 +131,8 @@ assert(Utils.TableIsSame(seriData, expect))
 -- 清理脏标记
 Factory.ClearDirtyTags(obj)
 local updateLogs = Factory.FetchModifyLog(attrObj, Typedef.GetFullTagsFlag(), false, true)
-local expect = {
-	["$set"] = {},
-	["$unset"] = {},
-}
-assert(Utils.TableIsSame(updateLogs, expect))
+local expect = nil
+assert(updateLogs == expect)
 
 -- 设置field修改事件监听回调
 Factory.SetDirtyCallback(attrObj, function(modifyDoc, modifyKey, oldVal, tagsFlag)
