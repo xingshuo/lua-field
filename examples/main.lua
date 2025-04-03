@@ -8,6 +8,23 @@ Typedef.SetTypedef(Attrdef)
 local TagsDef = require("examples.res.tagdef")
 Typedef.SetTagdef(TagsDef)
 
+local function test0()
+	local attrObj = Factory.CreateObj({}, "BaseAttr")
+	assert(attrObj:Next() == nil)
+	attrObj.lv = 30
+	attrObj.offline_time = 0
+	local key, val = attrObj:Next()
+	if key == "lv" then
+		assert(val == 30)
+		local nk, nv = attrObj:Next(key)
+		assert(nk == "offline_time" and nv == 0)
+	else
+		assert(key == "offline_time" and val == 0)
+		local nk, nv = attrObj:Next(key)
+		assert(nk == "lv" and nv == 30)
+	end
+end
+
 local function test1()
 	local rawData = {
 		create_time = os.time(),
@@ -226,6 +243,8 @@ local function test2()
 	assert(Utils.TableIsSame(seriData, expect), Utils.TableTostr(seriData))
 end
 
+test0()
+print("==========test0 done=======")
 test1()
 print("==========test1 done=======")
 test2()

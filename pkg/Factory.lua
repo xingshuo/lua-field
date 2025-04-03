@@ -210,6 +210,10 @@ function mapMeta:_fetchDirtyDoc(nTagsFlag)
 	return dirtyDoc
 end
 
+function mapMeta:Next(key)
+	return next(self.__realdata, key)
+end
+
 
 function structMeta:__index(k)
 	if structMeta[k] then
@@ -370,6 +374,10 @@ function structMeta:_setDirtyCallback(callback)
 	end
 end
 
+function structMeta:Next(key)
+	return next(self.__realdata, key)
+end
+
 local function _copyList(list, appendVal)
 	local new = {}
 	local len = #list
@@ -462,6 +470,7 @@ end
 
 -- 清除代理对象指定tags脏标记
 function Api.ClearDirtyTags(obj, nTagsFlag)
+	assert(getmetatable(obj) == structMeta, "struct obj needed!")
 	nTagsFlag = nTagsFlag or Typedef.GetFullTagsFlag()
 	obj:_clearDirtyTags(nTagsFlag, true)
 end
@@ -469,6 +478,7 @@ end
 -- 为struct对象及其所有子孙节点设置field修改事件监听回调
 -- callback: function (modifyDoc, modifyKey, oldValue, valueTags)
 function Api.SetDirtyCallback(obj, callback)
+	assert(getmetatable(obj) == structMeta, "struct obj needed!")
 	obj:_setDirtyCallback(callback)
 end
 
@@ -489,6 +499,7 @@ end
 	}
 ]]
 function Api.FetchModifyLog(obj, nTagsFlag, isClearDirtyTags, toMongo)
+	assert(getmetatable(obj) == structMeta, "struct obj needed!")
 	local logList = {}
 	_fetchModifyLog(obj, nTagsFlag, isClearDirtyTags, logList)
 	if #logList == 0 then

@@ -2,7 +2,12 @@
 * 基于IDL描述每个Entity属性类型和Tag标识，利用lua metatable hook属性读写操作, 提供Entity属性存盘和CS属性同步功能的基础支持
 
 ## 功能支持
-* 基于Entity属性IDL定义 和 原始数据创建代理对象，通过代理对象读写数据与原生lua table一致：支持table方式读写数据、pairs遍历、取长度(#)、ipairs遍历(高版本lua不支持__ipairs元方法，需要单独处理下)
+* 基于Entity属性IDL定义 和 原始数据创建代理对象，代理对象与原生lua table支持以下相同操作方式:
+```bash
+1. 通过'[]'或'.'读写数据
+2. pairs遍历
+3. '#'取长度
+```
 * 通过Entity属性IDL定义，约束每个field类型及关联的Tags标识，属性字段加载或修改时，会基于IDL描述做类型检查
 * Entity属性修改自动标脏，并支持基于脏标记和IDL描述的Tags标识生成Modify Patch（存盘目前只支持生成mongodb的修改补丁）
 * 基于IDL导入、导出Entity存盘属性数据和CS间同步属性数据（如从mongodb加载的bson格式数据，会根据IDL定义自动将number类型的key从string还原成number，同理数据写入mongodb时，也会按bson格式把number类型的key转成string，业务无感知）
@@ -15,6 +20,25 @@
 * 属性定义只能以struct类型作为根节点，且struct类型只能以string作为field名
 * map类型只能以number 或 string类型做key，只支持基础类型 或 struct类型做value（map目前不支持直接嵌套map，只能通过定义struct类型的value，在内部二次包装来实现）
 * 每个属性字段支持同时标记多个Tag（按位标记, 最多支持64种不同Tag）, 当某个属性字段发生修改，其IDL定义的全部Tag自动标脏，每个属性字段不同Tag之间标脏与清理脏标记完全独立
+* 高版本lua不支持__ipairs元方法，如果有通过ipairs遍历map对象的需求，需要按以下方式重写ipairs:
+```lua
+local raw_ipairs = _G.ipairs
+
+_G.ipairs = function (t)
+	local mt = getmetatable(t)
+	local f = mt and mt.__ipairs or raw_ipairs
+	return f(t)
+end
+```
+* struct对象和map对象，不支持通过next函数访问内部数据，可以使用obj:Next(index)替代:
+```lua
+obj:Next() -- equal to `next(t)`
+obj:Next('x') -- equal to `next(t, 'x')`
+
+if obj:Next() ~= nil then -- 判断obj非空
+	-- do something
+end
+```
 
 ## 接口
 * CreateObj(rawData, typename, fromMongo) -- 基于原始数据生成代理对象，类似ORM
