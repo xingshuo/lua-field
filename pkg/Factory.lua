@@ -176,16 +176,35 @@ end
 
 function mapMeta:_clearDirtyTags(nTagsFlag, isRecursive)
 	local dirtyFlags = self.__dirtyflags
-	for key, flag in pairs(dirtyFlags) do
-		if (nTagsFlag & flag) ~= 0 then
-			dirtyFlags[key] = (~nTagsFlag) & flag
-		end
-	end
+	local realdata = self.__realdata
+	local vt = self.__valuedef:Type()
 	if isRecursive then
-		local realdata = self.__realdata
-		for _, v in pairs(realdata) do
-			if type(v) == "table" then
-				v:_clearDirtyTags(nTagsFlag, isRecursive)
+		for key, flag in pairs(dirtyFlags) do
+			if (nTagsFlag & flag) ~= 0 then
+				dirtyFlags[key] = (~nTagsFlag) & flag
+			end
+		end
+		if not Const.BasicTypes[vt] then -- struct
+			for _, v in pairs(realdata) do
+				v:_clearDirtyTags(nTagsFlag, true)
+			end
+		end
+	else
+		if Const.BasicTypes[vt] then
+			for key, flag in pairs(dirtyFlags) do
+				if (nTagsFlag & flag) ~= 0 then
+					dirtyFlags[key] = (~nTagsFlag) & flag
+				end
+			end
+		else -- struct
+			for key, flag in pairs(dirtyFlags) do
+				if (nTagsFlag & flag) ~= 0 then
+					dirtyFlags[key] = (~nTagsFlag) & flag
+					local val = realdata[key]
+					if val then
+						val:_clearDirtyTags(nTagsFlag, true)
+					end
+				end
 			end
 		end
 	end
@@ -330,16 +349,26 @@ end
 
 function structMeta:_clearDirtyTags(nTagsFlag, isRecursive)
 	local dirtyFlags = self.__dirtyflags
-	for key, flag in pairs(dirtyFlags) do
-		if (nTagsFlag & flag) ~= 0 then
-			dirtyFlags[key] = (~nTagsFlag) & flag
-		end
-	end
+	local realdata = self.__realdata
 	if isRecursive then
-		local realdata = self.__realdata
+		for key, flag in pairs(dirtyFlags) do
+			if (nTagsFlag & flag) ~= 0 then
+				dirtyFlags[key] = (~nTagsFlag) & flag
+			end
+		end
 		for _, v in pairs(realdata) do
 			if type(v) == "table" then
-				v:_clearDirtyTags(nTagsFlag, isRecursive)
+				v:_clearDirtyTags(nTagsFlag, true)
+			end
+		end
+	else
+		for key, flag in pairs(dirtyFlags) do
+			if (nTagsFlag & flag) ~= 0 then
+				dirtyFlags[key] = (~nTagsFlag) & flag
+				local val = realdata[key]
+				if type(val) == "table" then
+					val:_clearDirtyTags(nTagsFlag, true)
+				end
 			end
 		end
 	end
